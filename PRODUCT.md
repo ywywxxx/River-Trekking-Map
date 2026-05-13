@@ -37,6 +37,7 @@ Primary areas of interest:
 - Mount Tamalpais
 - East Bay Hills
 - Peninsula open spaces
+- Half Moon Bay / San Mateo Coast Range / Purisima Creek area
 - Santa Cruz Mountains
 - Big Basin / Fall Creek / Henry Cowell area
 - Uvas Canyon / Mount Madonna / Santa Clara County foothills
