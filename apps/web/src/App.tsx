@@ -83,6 +83,29 @@ const emptyPolygons: PolygonCollection = {
   features: [],
 }
 
+const slopeColorExpression: maplibregl.ExpressionSpecification = [
+  'case',
+  ['has', 'local_slope_percent'],
+  [
+    'interpolate',
+    ['linear'],
+    ['get', 'local_slope_percent'],
+    0,
+    '#ffffb2',
+    2,
+    '#fed976',
+    6,
+    '#78c679',
+    12,
+    '#fd8d3c',
+    20,
+    '#e31a1c',
+    20.1,
+    '#000000',
+  ],
+  '#00d061',
+]
+
 function featureName(properties: FeatureProperties) {
   return String(properties.name || properties.ref || properties.highway || properties.waterway || 'Unnamed')
 }
@@ -758,6 +781,7 @@ function App() {
   })
   const [nearTrailOnly, setNearTrailOnly] = useState(false)
   const [excludeUrban, setExcludeUrban] = useState(true)
+  const [showSlopeColors, setShowSlopeColors] = useState(true)
   const [trailThresholdMeters, setTrailThresholdMeters] = useState(75)
   const [minimumSegmentMeters, setMinimumSegmentMeters] = useState(200)
   const [overlayData, setOverlayData] = useState<{
@@ -798,7 +822,7 @@ function App() {
     mapRef.current.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none')
   }, [])
 
-  const applyFilterStyling = useCallback((enabled: boolean) => {
+  const applyFilterStyling = useCallback((enabled: boolean, showSlope: boolean) => {
     const map = mapRef.current
     if (!map) {
       return
@@ -862,28 +886,7 @@ function App() {
     }
 
     if (map.getLayer('streams-near-line')) {
-      map.setPaintProperty('streams-near-line', 'line-color', [
-        'case',
-        ['has', 'local_slope_percent'],
-        [
-          'interpolate',
-          ['linear'],
-          ['get', 'local_slope_percent'],
-          0,
-          '#ffffb2',
-          2,
-          '#fed976',
-          6,
-          '#78c679',
-          12,
-          '#fd8d3c',
-          20,
-          '#e31a1c',
-          20.1,
-          '#000000',
-        ],
-        '#00d061',
-      ])
+      map.setPaintProperty('streams-near-line', 'line-color', showSlope ? slopeColorExpression : '#00d061')
       map.setPaintProperty('streams-near-line', 'line-opacity', enabled ? 1 : 0.96)
       map.setPaintProperty(
         'streams-near-line',
@@ -1073,28 +1076,7 @@ function App() {
         type: 'line',
         source: 'candidateStreams',
         paint: {
-          'line-color': [
-            'case',
-            ['has', 'local_slope_percent'],
-            [
-              'interpolate',
-              ['linear'],
-              ['get', 'local_slope_percent'],
-              0,
-              '#ffffb2',
-              2,
-              '#fed976',
-              6,
-              '#78c679',
-              12,
-              '#fd8d3c',
-              20,
-              '#e31a1c',
-              20.1,
-              '#000000',
-            ],
-            '#00d061',
-          ],
+          'line-color': slopeColorExpression,
           'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2.8, 15, 5.2],
           'line-opacity': 0.96,
         },
@@ -1187,18 +1169,18 @@ function App() {
     setLayerVisibility('streams-line', layers.streams)
     setLayerVisibility('streams-near-halo', layers.streams)
     setLayerVisibility('streams-near-line', layers.streams)
-    setLayerVisibility('access-near-line', layers.trails || layers.roads)
+    setLayerVisibility('access-near-line', layers.trails)
     setLayerVisibility('topo-base', layers.topo)
   }, [layers, setLayerVisibility])
 
   useEffect(() => {
-    applyFilterStyling(nearTrailOnly)
-  }, [applyFilterStyling, nearTrailOnly])
+    applyFilterStyling(nearTrailOnly, showSlopeColors)
+  }, [applyFilterStyling, nearTrailOnly, showSlopeColors])
 
   useEffect(() => {
     const accessLines: LineCollection = {
       type: 'FeatureCollection',
-      features: [...overlayData.trails.features, ...overlayData.roads.features],
+      features: overlayData.trails.features,
     }
     const candidateSegments = buildCandidateCreekSegments(
       overlayData.streams,
@@ -1341,7 +1323,7 @@ function App() {
           </div>
           <div className="legend-row">
             <span className="access-candidate-swatch"></span>
-            Access near creeks
+            Trails near creeks
           </div>
           <label>
             <input
@@ -1415,7 +1397,7 @@ function App() {
               checked={nearTrailOnly}
               onChange={(event) => setNearTrailOnly(event.target.checked)}
             />
-            Only show creek-access pairs
+            Only show creek-trail pairs
           </label>
           <label>
             <input
@@ -1425,8 +1407,16 @@ function App() {
             />
             Exclude urban areas
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={showSlopeColors}
+              onChange={(event) => setShowSlopeColors(event.target.checked)}
+            />
+            Show slope colors
+          </label>
           <label className="stacked-control">
-            <span>Access distance threshold</span>
+            <span>Trail distance threshold</span>
             <select
               value={trailThresholdMeters}
               onChange={(event) => setTrailThresholdMeters(Number(event.target.value))}
@@ -1452,7 +1442,8 @@ function App() {
           </label>
           <p className="helper-text">
             Current-view estimate using OSM geometry. Candidate creek colors use sampled local slope percent:
-            pale is flatter, orange/red is steeper, black is over 20%. Urban landuse is excluded by default.
+            pale is flatter, orange/red is steeper, black is over 20%. Only trail/path proximity counts; roads are
+            shown as gray context.
           </p>
         </section>
 
@@ -1464,6 +1455,20 @@ function App() {
 
       <div className="map-wrap">
         <div ref={containerRef} className="map-container" />
+        {nearTrailOnly && showSlopeColors && (
+          <div className="slope-legend" aria-label="Local slope color legend">
+            <div className="slope-legend-title">Local slope</div>
+            <div className="slope-legend-bar"></div>
+            <div className="slope-legend-labels">
+              <span>0%</span>
+              <span>2%</span>
+              <span>6%</span>
+              <span>12%</span>
+              <span>20%</span>
+              <span>&gt;20%</span>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   )

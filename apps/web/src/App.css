@@ -271,6 +271,43 @@
   inset: 0;
 }
 
+.slope-legend {
+  position: absolute;
+  right: 18px;
+  bottom: 34px;
+  z-index: 2;
+  width: min(360px, calc(100% - 36px));
+  border: 1px solid rgba(54, 61, 55, 0.22);
+  border-radius: 8px;
+  background: rgba(251, 252, 247, 0.92);
+  box-shadow: 0 8px 24px rgba(24, 34, 28, 0.18);
+  padding: 10px 12px 9px;
+}
+
+.slope-legend-title {
+  color: #253229;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 7px;
+}
+
+.slope-legend-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffffb2, #fed976, #78c679, #fd8d3c, #e31a1c, #000000);
+}
+
+.slope-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 6px;
+  color: #4e5d55;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
 .map-popup h3 {
   margin: 0 0 8px;
   color: #17251f;
