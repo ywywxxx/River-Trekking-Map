@@ -83,6 +83,8 @@ const emptyPolygons: PolygonCollection = {
   features: [],
 }
 
+const pendingSlopeColor = '#8b5cf6'
+
 const slopeColorExpression: maplibregl.ExpressionSpecification = [
   'case',
   ['has', 'local_slope_percent'],
@@ -103,7 +105,7 @@ const slopeColorExpression: maplibregl.ExpressionSpecification = [
     20.1,
     '#000000',
   ],
-  '#00d061',
+  pendingSlopeColor,
 ]
 
 function featureName(properties: FeatureProperties) {
@@ -1279,10 +1281,9 @@ function App() {
       <aside className="control-panel" aria-label="Map controls">
         <div className="brand-block">
           <p className="eyebrow">River Trekking Map</p>
-          <h1>Bay Area base map</h1>
+          <h1>Trail Along Creek Finder</h1>
           <p>
-            First-pass exploration map for checking trail, creek, and terrain alignment before
-            candidate scoring.
+            Quickly filter for trail-along-creek corridors using map, trail, creek, and terrain data.
           </p>
         </div>
 
@@ -1336,7 +1337,7 @@ function App() {
         </section>
 
         <section className="panel-section">
-          <h2>Test areas</h2>
+          <h2>Example areas</h2>
           <div className="place-list">
             {places.map((place) => (
               <button
